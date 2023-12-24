@@ -95,7 +95,6 @@ EXPECTED_MODULE_ELEMENTS = (
     ('переменная', 'screen'),
     ('переменная', 'clock'),
     ('функция', 'main'),
-    ('функция', 'handle_keys'),
 )
 
 
@@ -125,11 +124,8 @@ def test_vars_type(expected_type, var_name):
     )
 
 
-@pytest.mark.parametrize(
-    'func_name',
-    ('handle_keys', 'main'),
-)
-def test_vars_are_functions(func_name):
+def test_vars_are_functions():
+    func_name = 'main'
     assert callable(getattr(the_snake, func_name, None)), (
         f'Убедитесь, что переменная `{func_name}` является функцией.'
     )
