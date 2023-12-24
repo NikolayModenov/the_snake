@@ -31,6 +31,22 @@ pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
+def handle_keys(game_object, event):
+    """
+    Determine the new direction of the snake's movement
+    according to the pressed key.
+    """
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_UP and game_object.direction != DOWN:
+            game_object.next_direction = UP
+        elif event.key == pygame.K_DOWN and game_object.direction != UP:
+            game_object.next_direction = DOWN
+        elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
+            game_object.next_direction = LEFT
+        elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
+            game_object.next_direction = RIGHT
+
+
 class GameObject:
     """This class describes the general properties of game objects."""
 
@@ -151,22 +167,6 @@ class Snake(GameObject):
         pygame.draw.rect(surface, self.frame_color, head_rect, 1)
         return head_rect
 
-    def handle_keys(self, event):
-        """
-        If the new direction is not opposite to the current movement,
-        then determine the new direction of movement of the snake
-        according to the pressed key.
-        """
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP and self.direction != DOWN:
-                self.next_direction = UP
-            elif event.key == pygame.K_DOWN and self.direction != UP:
-                self.next_direction = DOWN
-            elif event.key == pygame.K_LEFT and self.direction != RIGHT:
-                self.next_direction = LEFT
-            elif event.key == pygame.K_RIGHT and self.direction != LEFT:
-                self.next_direction = RIGHT
-
     def reset(self, surface=screen):
         """Erase the snake and draw a new one in the center of the screen."""
         for position in self.positions:
@@ -230,7 +230,7 @@ def main():
         if game_snake.length == GRID_HEIGHT * GRID_WIDTH:
             game_snake.reset()
         for event in pygame.event.get():
-            game_snake.handle_keys(event)
+            handle_keys(game_snake, event)
             game_snake.update_direction()
             if event.type == pygame.QUIT:
                 pygame.quit()
