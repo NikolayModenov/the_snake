@@ -33,7 +33,7 @@ clock = pygame.time.Clock()
 
 def handle_keys(game_object, event):
     """
-    Determine the new direction of the snake's movement
+    Determine the new direction of the target's movement
     according to the pressed key.
     """
     if event.type == pygame.KEYDOWN:
@@ -74,6 +74,13 @@ class GameObject:
             current_position[0][1] = SCREEN_HEIGHT - GRID_SIZE
         if current_position[0][1] > (SCREEN_HEIGHT - GRID_SIZE):
             current_position[0][1] = 0
+
+    @staticmethod
+    def randomize_position() -> list[int]:
+        """Assign random coordinates to the game object."""
+        width = randint(0, GRID_WIDTH - 1) * GRID_SIZE
+        height = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+        return [width, height]
 
     def draw(self):
         """
@@ -193,13 +200,6 @@ class Apple(GameObject):
         self.body_color = body_color
         self.frame_color = frame_color
 
-    def randomize_position(self) -> list[int]:
-        """Assign random coordinates to the apple."""
-        width = randint(0, GRID_WIDTH - 1) * GRID_SIZE
-        height = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-        self.position = [width, height]
-        return self.position
-
     def draw(self, surface=screen):
         """
         Draw an apple in the form of a colored square with a frame
@@ -219,7 +219,12 @@ class Apple(GameObject):
 
 
 def main():
-    """Launch the Snake game"""
+    """
+    Launch the Snake game.
+    Control the snake with the arrow keys on the keyboard.
+    If the snake bites itself or fills the entire playing field,
+    then reset the game.
+    """
     game_apple = Apple()
     game_apple.draw()
 
@@ -237,7 +242,7 @@ def main():
         if game_snake.get_head_position().colliderect(game_apple.draw()):
             game_apple.draw_eaten_apple()
             while game_apple.position in game_snake.positions:
-                game_apple.randomize_position()
+                game_apple.position = game_apple.randomize_position()
             game_apple.draw()
             game_snake.hunger = False
         game_snake.move()
