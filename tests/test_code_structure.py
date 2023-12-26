@@ -95,7 +95,7 @@ EXPECTED_MODULE_ELEMENTS = (
     ('переменная', 'screen'),
     ('переменная', 'clock'),
     ('функция', 'main'),
-    ('функция', 'handle_keys')
+    ('функция', 'handle_keys'),
 )
 
 
