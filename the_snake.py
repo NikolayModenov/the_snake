@@ -71,8 +71,9 @@ def snake_length_control(length):
 
 def handle_keys(game_object):
     """
-    Determine the new direction of the target's movement
-    according to the pressed key.
+    Convert keystrokes of movement into the direction of movement of the snake,
+    close the game when pressing ESC,
+    change the speed of movement of the snake with the Z and X buttons.
     """
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -138,10 +139,10 @@ class Snake(GameObject):
 
     def move(self):
         """
-        If the snake has not bitten itself,
-        move it in the specified direction.
-        Otherwise, erase the snake and create it in the center of the screen.
-        If the snake has eaten an apple, do not erase its last cell.
+        Determine the trajectory of the snake,
+        if the snake did not eat the apple,
+        then paint over the last link of the snake,
+        otherwise do not delete it.
         """
         width, height = self.direction
         self.position = [
@@ -177,7 +178,7 @@ class Snake(GameObject):
 
     def update_direction(self):
         """Update the direction of travel"""
-        pass
+        handle_keys(self)
 
 
 class Apple(GameObject):
@@ -214,10 +215,11 @@ class Apple(GameObject):
 
 def main():
     """
-    Launch the Snake game.
-    Control the snake with the arrow keys on the keyboard.
-    If the snake bites itself or fills the entire playing field,
-    then reset the game.
+    Start the Snake game,
+    control the snake using the arrow keys on the keyboard,
+    change the speed of the snake using the Z and X keys,
+    if the snake bites itself or fills the entire playing field,
+    then save the length of the snake and restart the game.
     """
     screen.fill(BOARD_BACKGROUND_COLOR)
     current_caption()
@@ -226,7 +228,7 @@ def main():
     snake = Snake()
 
     while True:
-        handle_keys(snake)
+        snake.update_direction()
         if (
             snake.get_head_position() in snake.positions[1:]
             or snake.length == GRID_HEIGHT * GRID_WIDTH
