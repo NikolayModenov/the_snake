@@ -90,17 +90,20 @@ class GameObject:
         self.body_color = body_color
         self.frame_color = frame_color
 
-    def draw(self, position, is_erase=False):
+    def draw_cell(self, position, is_erase=False):
         """
         Color the cell in the specified location in the default colors,
         if 'erase=True' color the cell in the screen color.
         """
-        object_rect = pg.Rect((position), (GRID_SIZE, GRID_SIZE))
+        object_rect = pg.Rect(position, (GRID_SIZE, GRID_SIZE))
         if is_erase:
             pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, object_rect)
         else:
             pg.draw.rect(screen, self.body_color, object_rect)
             pg.draw.rect(screen, self.frame_color, object_rect, 1)
+
+    def draw():
+        pass
 
 
 class Snake(GameObject):
@@ -112,7 +115,7 @@ class Snake(GameObject):
     def __init__(self):
         super().__init__(body_color=SNAKE_COLOR, frame_color=FRAME_COLOR)
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
-        self.hunger = True
+        self.positions = [self.position]
         self.reset()
         self.length = None  # for pytest only
 
@@ -122,36 +125,35 @@ class Snake(GameObject):
         in the specified direction.
         """
         width, height = self.direction
-        self.position = [
-            (width * GRID_SIZE + self.get_head_position()[0])
-            % SCREEN_WIDTH,
-            (height * GRID_SIZE + self.get_head_position()[1])
-            % SCREEN_HEIGHT
-        ]
-        self.positions.insert(0, self.position)
+        width_head, height_head = self.get_head_position()
+        self.positions.insert(0, [
+            (width * GRID_SIZE + width_head) % SCREEN_WIDTH,
+            (height * GRID_SIZE + height_head) % SCREEN_HEIGHT
+        ])
 
     def bit_off_tail(self):
         """Remove the last link of the snake if it is hungry."""
         if self.hunger:
             self.positions.pop(-1)
 
-    def draw_cell(self):
+    def draw(self):
         """
         Specify a place to paint over the snake's head.
         If the snake is hungry:
         paint over the last link of the snake with the condition 'erase=True',
         and then remove the last link of the snake.
         """
-        self.draw(self.position)
+        self.draw_cell(self.positions[0])
         if self.hunger:
-            self.draw(self.positions[-1], is_erase=True)
+            self.draw_cell(self.positions[-1], is_erase=True)
             self.bit_off_tail()
         else:
             self.hunger = True
 
     def reset(self):
         """Reset the snake to its initial state."""
-        self.positions = [self.position]
+        self.hunger = True
+        self.positions = [self.positions[0]]
 
     def get_head_position(self):
         """Return the current position of the snake's head."""
@@ -166,19 +168,16 @@ class Snake(GameObject):
         If the length of the snake is greater than the maximum,
         then assign it to the 'max' cell.
         """
-        if len(self.positions) > game_info["max"]:
-            game_info["max"] = len(self.positions)
+        game_info["max"] = max(game_info["max"], len(self.positions))
 
 
 class Apple(GameObject):
     """This class draws an apple in a random place inside the screen."""
 
-    list_positions: list[list[int]] = [COORDINATES_CENTRAL_CELL]
-
     def __init__(self):
         super().__init__(body_color=APPLE_COLOR, frame_color=FRAME_COLOR)
 
-    def randomize_position(self, list_positions) -> list[int]:
+    def randomize_position(self, list_positions):
         """
         Assign new random coordinates to the apple
         if the coordinates of the apple are included in the specified list.
@@ -190,11 +189,10 @@ class Apple(GameObject):
             ]
             if self.position not in list_positions:
                 break
-        return self.position
 
-    def draw_cell(self):
+    def draw(self):
         """Specify the place where to paint over the apple."""
-        self.draw(self.position)
+        self.draw_cell(self.position)
 
 
 def main():
@@ -223,12 +221,11 @@ def main():
             snake.reset()
             snake.hunger = False
             screen.fill(BOARD_BACKGROUND_COLOR)
-            apple.randomize_position(snake.positions)
         elif snake.get_head_position() == apple.position:
             snake.hunger = False
             apple.randomize_position(snake.positions)
-        snake.draw_cell()
-        apple.draw_cell()
+        snake.draw()
+        apple.draw()
 
         pg.display.update()
         update_screen_title(game_info, len(snake.positions))
