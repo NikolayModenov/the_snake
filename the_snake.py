@@ -117,8 +117,7 @@ class Snake(GameObject):
         super().__init__(body_color=SNAKE_COLOR, frame_color=FRAME_COLOR)
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.positions = [self.position]
-        self.reset()
-        self.length = None  # for pytest only
+        self.length = None  # For pytest only.
 
     def move(self):
         """
@@ -132,28 +131,22 @@ class Snake(GameObject):
             (height * GRID_SIZE + height_head) % SCREEN_HEIGHT
         ])
 
-    def bit_off_tail(self):
-        """Remove the last link of the snake if it is hungry."""
-        if self.hunger:
-            self.positions.pop(-1)
-
-    def draw(self):
+    def draw(self, drop_tail):
         """
         Specify a place to paint over the snake's head.
-        If the snake is hungry:
+        If the snake drop tail:
         paint over the last link of the snake with the condition 'erase=True',
         and then remove the last link of the snake.
         """
         self.draw_cell(self.positions[0])
-        if self.hunger:
+        if drop_tail:
+            # Определяет что хвост не надо закрашивать
+            # когда змея съела яблоко или укусила себя.
             self.draw_cell(self.positions[-1], is_erase=True)
-            self.bit_off_tail()
-        else:
-            self.hunger = True
+            self.positions.pop(-1)
 
     def reset(self):
         """Reset the snake to its initial state."""
-        self.hunger = True
         self.positions = [self.positions[0]]
 
     def get_head_position(self):
@@ -215,17 +208,18 @@ def main():
     apple.randomize_position(snake.positions)
 
     while True:
+        drop_tail = True
         handle_keys(snake, game_info)
         snake.move()
         if (snake.get_head_position() in snake.positions[1:]):
             snake.update_max_score(game_info)
             snake.reset()
-            snake.hunger = False
+            drop_tail = False
             screen.fill(BOARD_BACKGROUND_COLOR)
         elif snake.get_head_position() == apple.position:
-            snake.hunger = False
+            drop_tail = False
             apple.randomize_position(snake.positions)
-        snake.draw()
+        snake.draw(drop_tail)
         apple.draw()
 
         pg.display.update()
