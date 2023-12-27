@@ -102,7 +102,8 @@ class GameObject:
             pg.draw.rect(screen, self.body_color, object_rect)
             pg.draw.rect(screen, self.frame_color, object_rect, 1)
 
-    def draw():
+    def draw(self):
+        """An empty method for pytest."""
         pass
 
 
