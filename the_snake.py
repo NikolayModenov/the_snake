@@ -90,7 +90,7 @@ class GameObject:
         self.body_color = body_color
         self.frame_color = frame_color
 
-    def draw_cell(self, position, is_erase=False):
+    def draw(self, position, is_erase=False):
         """
         Color the cell in the specified location in the default colors,
         if 'erase=True' color the cell in the screen color.
@@ -114,6 +114,7 @@ class Snake(GameObject):
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.hunger = True
         self.reset()
+        self.length = None  # for pytest only
 
     def move(self):
         """
@@ -134,16 +135,16 @@ class Snake(GameObject):
         if self.hunger:
             self.positions.pop(-1)
 
-    def draw(self):
+    def draw_cell(self):
         """
         Specify a place to paint over the snake's head.
         If the snake is hungry:
         paint over the last link of the snake with the condition 'erase=True',
         and then remove the last link of the snake.
         """
-        self.draw_cell(self.position)
+        self.draw(self.position)
         if self.hunger:
-            self.draw_cell(self.positions[-1], is_erase=True)
+            self.draw(self.positions[-1], is_erase=True)
             self.bit_off_tail()
         else:
             self.hunger = True
@@ -191,9 +192,9 @@ class Apple(GameObject):
                 break
         return self.position
 
-    def draw(self):
+    def draw_cell(self):
         """Specify the place where to paint over the apple."""
-        self.draw_cell(self.position)
+        self.draw(self.position)
 
 
 def main():
@@ -226,8 +227,8 @@ def main():
         elif snake.get_head_position() == apple.position:
             snake.hunger = False
             apple.randomize_position(snake.positions)
-        snake.draw()
-        apple.draw()
+        snake.draw_cell()
+        apple.draw_cell()
 
         pg.display.update()
         update_screen_title(game_info, len(snake.positions))
