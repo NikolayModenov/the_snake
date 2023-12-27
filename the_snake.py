@@ -34,42 +34,24 @@ SPEED_KEYS = {
     pg.K_x: (25, 4)
 }
 
-snake_info = {
-    "max": 0,
-    "current": 0,
-    "speed": 9
-}
-
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 
 
-def current_caption():
+def update_screen_title(game_info, current_score):
     """Update the screen title."""
     pg.display.set_caption(
         '"Змейка". Выход - ESC. '
-        f'Сложность: {snake_info["speed"]}. '
+        f'Сложность: {game_info["speed"]}. '
         'Изменить - Z, X. '
-        f'счёт: {snake_info["current"]}. '
-        f'рекорд: {snake_info["max"]}'
+        f'счёт: {current_score}. '
+        f'рекорд: {game_info["max"]}'
     )
 
 
 clock = pg.time.Clock()
 
 
-def snake_length_control(length):
-    """
-    If the length of the snake is greater than the maximum,
-    then assign it to the 'max' cell,
-    otherwise assign it to the 'current' cell.
-    """
-    if length > snake_info["max"]:
-        snake_info["max"] = length
-    else:
-        snake_info["current"] = length
-
-
-def handle_keys(game_object):
+def handle_keys(game_object, game_info):
     """
     Convert keystrokes of movement into the direction of movement of the snake,
     close the game when pressing ESC,
@@ -84,15 +66,15 @@ def handle_keys(game_object):
                 pg.quit()
                 exit()
             if (
-                event.key in DIRECTION_KEYS.keys()
-                    and game_object.direction != DIRECTION_KEYS[event.key][0]
+                event.key in DIRECTION_KEYS
+                and game_object.direction != DIRECTION_KEYS[event.key][0]
             ):
-                game_object.direction = DIRECTION_KEYS[event.key][1]
+                game_object.update_direction(DIRECTION_KEYS[event.key][1])
             if (
-                event.key in SPEED_KEYS.keys()
-                    and snake_info["speed"] != SPEED_KEYS[event.key][0]
+                event.key in SPEED_KEYS
+                and game_info["speed"] != SPEED_KEYS[event.key][0]
             ):
-                snake_info["speed"] += SPEED_KEYS[event.key][1]
+                game_info["speed"] += SPEED_KEYS[event.key][1]
 
 
 class GameObject:
@@ -108,14 +90,16 @@ class GameObject:
         self.body_color = body_color
         self.frame_color = frame_color
 
-    def draw(self, position, body_color):
-        """Define how the object will be drawn on the screen."""
-        object_rect = pg.Rect(
-            (position[0], position[1]),
-            (GRID_SIZE, GRID_SIZE)
-        )
-        pg.draw.rect(screen, body_color, object_rect)
-        if body_color is not BOARD_BACKGROUND_COLOR:
+    def draw_cell(self, position, is_erase=False):
+        """
+        Color the cell in the specified location in the default colors,
+        if 'erase=True' color the cell in the screen color.
+        """
+        object_rect = pg.Rect((position), (GRID_SIZE, GRID_SIZE))
+        if is_erase:
+            pg.draw.rect(screen, BOARD_BACKGROUND_COLOR, object_rect)
+        else:
+            pg.draw.rect(screen, self.body_color, object_rect)
             pg.draw.rect(screen, self.frame_color, object_rect, 1)
 
 
@@ -125,24 +109,16 @@ class Snake(GameObject):
     the initial movement of which is chosen randomly.
     """
 
-    def __init__(
-            self,
-            position: list[int] = COORDINATES_CENTRAL_CELL,
-            body_color: tuple[int, int, int] = SNAKE_COLOR,
-            frame_color: tuple[int, int, int] = FRAME_COLOR
-    ):
-        super().__init__(position, body_color, frame_color)
-        self.positions = [self.position]
-        self.length = len(self.positions)
-        self.reset()
+    def __init__(self):
+        super().__init__(body_color=SNAKE_COLOR, frame_color=FRAME_COLOR)
+        self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.hunger = True
+        self.reset()
 
     def move(self):
         """
-        Determine the trajectory of the snake,
-        if the snake did not eat the apple,
-        then paint over the last link of the snake,
-        otherwise do not delete it.
+        Add a cell to the beginning of the snake,
+        in the specified direction.
         """
         width, height = self.direction
         self.position = [
@@ -151,103 +127,111 @@ class Snake(GameObject):
             (height * GRID_SIZE + self.get_head_position()[1])
             % SCREEN_HEIGHT
         ]
-        self.positions = [self.position] + self.positions
-        self.length = len(self.positions)
+        self.positions.insert(0, self.position)
+
+    def bit_off_tail(self):
+        """Remove the last link of the snake if it is hungry."""
         if self.hunger:
-            self.draw(
-                self.positions[-1],
-                BOARD_BACKGROUND_COLOR,
-            )
             self.positions.pop(-1)
+
+    def draw(self):
+        """
+        Specify a place to paint over the snake's head.
+        If the snake is hungry:
+        paint over the last link of the snake with the condition 'erase=True',
+        and then remove the last link of the snake.
+        """
+        self.draw_cell(self.position)
+        if self.hunger:
+            self.draw_cell(self.positions[-1], is_erase=True)
+            self.bit_off_tail()
         else:
             self.hunger = True
-        self.draw(self.get_head_position(), self.body_color)
 
     def reset(self):
-        """
-        Save the current length of the snake,
-        then reset the snake to its initial state.
-        """
-        self.direction = choice([UP, DOWN, LEFT, RIGHT])
-        snake_length_control(self.length)
-        self.positions = [COORDINATES_CENTRAL_CELL]
+        """Reset the snake to its initial state."""
+        self.positions = [self.position]
 
     def get_head_position(self):
         """Return the current position of the snake's head."""
         return self.positions[0]
 
-    def update_direction(self):
-        """Update the direction of travel"""
-        handle_keys(self)
+    def update_direction(self, direction):
+        """Update the direction of movement of the snake."""
+        self.direction = direction
+
+    def update_max_score(self, game_info):
+        """
+        If the length of the snake is greater than the maximum,
+        then assign it to the 'max' cell.
+        """
+        if len(self.positions) > game_info["max"]:
+            game_info["max"] = len(self.positions)
 
 
 class Apple(GameObject):
     """This class draws an apple in a random place inside the screen."""
 
-    def __init__(
-            self,
-            position: list[int] = COORDINATES_CENTRAL_CELL,
-            body_color: tuple[int, int, int] = APPLE_COLOR,
-            frame_color: tuple[int, int, int] = FRAME_COLOR,
-    ):
-        super().__init__(position, body_color, frame_color)
-        self.position = self.randomize_position()
+    list_positions: list[list[int]] = [COORDINATES_CENTRAL_CELL]
 
-    def randomize_position(
-            self,
-            list_positions=[COORDINATES_CENTRAL_CELL]
-    ) -> list[int]:
+    def __init__(self):
+        super().__init__(body_color=APPLE_COLOR, frame_color=FRAME_COLOR)
+
+    def randomize_position(self, list_positions) -> list[int]:
         """
-        If the coordinates of the apple are included in the specified list,
-        then assign new random coordinates to the apple.
+        Assign new random coordinates to the apple
+        if the coordinates of the apple are included in the specified list.
         """
-        self.position = [
-            randint(0, GRID_WIDTH - 1) * GRID_SIZE,
-            randint(0, GRID_HEIGHT - 1) * GRID_SIZE
-        ]
-        while self.position in list_positions:
+        while True:
             self.position = [
                 randint(0, GRID_WIDTH - 1) * GRID_SIZE,
                 randint(0, GRID_HEIGHT - 1) * GRID_SIZE
             ]
+            if self.position not in list_positions:
+                break
         return self.position
+
+    def draw(self):
+        """Specify the place where to paint over the apple."""
+        self.draw_cell(self.position)
 
 
 def main():
     """
-    Start the Snake game,
+    Start the snake game,
     control the snake using the arrow keys on the keyboard,
-    change the speed of the snake using the Z and X keys,
-    if the snake bites itself or fills the entire playing field,
-    then save the length of the snake and restart the game.
+    change the speed of the snake using the Z and X keys.
+    If the snake bites itself:
+    Update the score and reset the length of the snake.
     """
+    game_info = {
+        "max": 0,
+        "speed": 9
+    }
+
     screen.fill(BOARD_BACKGROUND_COLOR)
-    current_caption()
-    apple = Apple()
-    apple.draw(apple.position, apple.body_color)
     snake = Snake()
+    apple = Apple()
+    apple.randomize_position(snake.positions)
 
     while True:
-        snake.update_direction()
-        if (
-            snake.get_head_position() in snake.positions[1:]
-            or snake.length == GRID_HEIGHT * GRID_WIDTH
-        ):
+        handle_keys(snake, game_info)
+        snake.move()
+        if (snake.get_head_position() in snake.positions[1:]):
+            snake.update_max_score(game_info)
             snake.reset()
+            snake.hunger = False
             screen.fill(BOARD_BACKGROUND_COLOR)
             apple.randomize_position(snake.positions)
-            apple.draw(apple.position, apple.body_color)
-        if snake.get_head_position() == apple.position:
+        elif snake.get_head_position() == apple.position:
             snake.hunger = False
-            snake.move()
             apple.randomize_position(snake.positions)
-            apple.draw(apple.position, apple.body_color)
-        else:
-            snake.move()
+        snake.draw()
+        apple.draw()
 
         pg.display.update()
-        current_caption()
-        clock.tick(snake_info["speed"])
+        update_screen_title(game_info, len(snake.positions))
+        clock.tick(game_info["speed"])
 
 
 if __name__ == '__main__':
