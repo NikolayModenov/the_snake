@@ -117,7 +117,7 @@ class Snake(GameObject):
         super().__init__(body_color=SNAKE_COLOR, frame_color=FRAME_COLOR)
         self.direction = choice([UP, DOWN, LEFT, RIGHT])
         self.positions = [self.position]
-        self.length = None  # For pytest only.
+        self.length = None
 
     def move(self):
         """
