@@ -20,7 +20,7 @@
 
 1. Форкните проект [the_snake](https://github.com/NikolayModenov/the_snake/) на свой аккаунт Git Hub и склонируйте на свой локальный компьютер. 
 
--```git clone git@github.com:<ваше_имя_пользователя_на_GitHub>/the_snake.git ```
+      ```git clone git@github.com:<ваше_имя_пользователя_на_GitHub>/the_snake.git ```
 
 2. Создайте виртуальное окружение и подключитель к нему.
 
@@ -29,4 +29,4 @@
 
 3. Для запуска приложения введите команду:
 
-```python the_snake.py```
+      ```python the_snake.py```
